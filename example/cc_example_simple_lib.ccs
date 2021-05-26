@@ -1,0 +1,2 @@
+command test_load "[1a 02]"
+command test_add(x) "[1a 03 {long x}]"

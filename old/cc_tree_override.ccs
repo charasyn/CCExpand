@@ -1,0 +1,92 @@
+define CC_ARGUMENT_STORAGE = 0x7e97ba
+define CURRENT_BYTE = 0x7e97c8
+define TABLE_START_INDEX_1F = 0xF5
+define TREE_OVERRIDE_BASE = 0x18
+define TREE_OVERRIDE_END  = 0x20 // 1 after the last index (1F)
+define TREE_OVERRIDE_LEN  = 0x08
+
+define TREE_BANK_C1_TRAMPOLINE_LOCATION = 0xc1fffc
+
+// Trampoline to our code
+ROM[0xC1FFFC] = JML(TreeReoccuringEntry)
+
+// Override for 1F tree
+ROM[0xC181BB] = {
+    PHD
+    PHA
+    PHX
+    LDA_i(0x001f)
+    JML(TreeOverrideEntry)
+}
+// This bypasses parsing of certain CC codes using custom code -
+// in short, you can insert or update CC codes easily.
+// These are of the form: [aa bb ..]
+// 
+TreeOverrideEntry:
+    // At this point, we have:
+    // - the first CCScript byte in A
+    // - original D, A, and X preserved on stack
+
+    // Check if we should even run at all (error check on aa value)
+    CMP_i(TREE_OVERRIDE_BASE)
+    BMI(5) // aaCompareError
+    CMP_i(TREE_OVERRIDE_END)
+    BMI(3) // aaNoError
+aaCompareError:
+    // This should never happen, only due to a coding error!
+    // This means that you forgot to set the A register to the
+    // CC value being overridden.
+    JMP(FatalError)
+aaNoError:
+    // Create stack frame (according to stack size of caller)
+    // We're going to return past the creation of the stack frame
+    // since we overwrote it.
+    SEC
+    SBC_i(TREE_OVERRIDE_BASE)
+    TAY
+    ASL
+    TAX
+    TDC
+    CLC
+    ADC_x(TreeStackAddValue)
+    TCD
+    // OK! Our stack frame is created now.
+    // Let's save (CC code - TREE_OVERRIDE_BASE) into a variable
+    STY_d(0x00)
+    // If it's not in our range
+
+TreeJumpBack:
+    LDA_d(0x00)
+    ASL
+    ADC_d(0x00)
+    TAX
+    LDA_x(ReturnAddresses)
+    STA_a(0x00BC)
+    INX
+    LDA_x(ReturnAddresses)
+    STA_d(0x00BD)
+    PLX
+    PLA
+    JML_i(0x00BC)
+
+FatalError:
+    JMP(FatalError)
+
+ReturnAddresses:
+    return_address(0x18, 0xc17915) // TAY ; STY $0e ; TXA
+    return_address(0x19, 0xc179b4) // TXA
+    return_address(0x1a, 0xc17b60) // TXA
+    return_address(0x1b, 0xc17c40) // TAY ; STY $16 ; TXA
+    return_address(0x1c, 0xc17d9e) // TXA
+    return_address(0x1d, 0xc17f1b) // TXA
+    return_address(0x1e, 0x000000) // Unused - CC_1E is coded differently
+    return_address(0x1d, 0xc181c5) // TXA
+TreeStackAddValue:
+    tbl16_value(0x18, 0xfff0)
+    tbl16_value(0x19, 0xffee)
+    tbl16_value(0x1a, 0xffee)
+    tbl16_value(0x1b, 0xffe8)
+    tbl16_value(0x1c, 0xffee)
+    tbl16_value(0x1d, 0xffea)
+    tbl16_value(0x1e, 0xfff0) // Unused - CC_1E is coded differently
+    tbl16_value(0x1f, 0xffec)

@@ -1,0 +1,169 @@
+import asm65816
+import ccexpand_asmlib
+
+// Additional CCScript codes
+// Initial version by jtolmar
+// Rework and additional support functions by cooprocks123e
+// With thanks to Phoenixbound, Catador and Herringway
+
+// Many CCScript commands are "trees" that branch into more commands based on the
+// next byte. Of these, 1A and 1B have very few commands and lots of space to
+// expand. EB++ uses 1B, so this one expands 1A. This frees up room for ~247 more
+// control codes.
+
+// Expanded code table. You can replace any of the DoNothing codes with yours.
+// The Original1A* codes should not be replaced unless you are rewriting it
+// or it will go unused in your hack.
+// It is recommended to use commands to call your custom control codes, so that
+// in the event it needs to be moved to another slot, only the command has to
+// be changed, and not your entire script.
+CodeTable: {
+  long Original1A00 // [1A 00] -- character select menu, no cancel
+  long Original1A01 // [1A 01] -- character select menu, can cancel
+  long DoNothing // [1A 02]
+  long DoNothing // [1A 03]
+  long Original1A04 // [1A 04] -- unused
+  long Original1A05 // [1A 05] -- display character inventory
+  long Original1A06 // [1A 06] -- display shop menu
+  long Original1A07 // [1A 07] -- something about Escargo Express
+  long Original1A08 // [1A 08] -- unused
+  long Original1A09 // [1A 09] -- unused
+  long Original1A0A // [1A 0A] -- something about phones
+  long Original1A0B // [1A 0B] -- unused
+  long DoNothing // [1A 0C]
+  long DoNothing // [1A 0D]
+  long DoNothing // [1A 0E]
+  long DoNothing // [1A 0F]
+  long DoNothing // [1A 10]
+  long DoNothing // [1A 11]
+  long DoNothing // [1A 12]
+  long DoNothing // [1A 13]
+  long DoNothing // [1A 14]
+  long DoNothing // [1A 15]
+  long DoNothing // [1A 16]
+  long DoNothing // [1A 17]
+  long DoNothing // [1A 18]
+  long DoNothing // [1A 19]
+  long DoNothing // [1A 1A]
+  long DoNothing // [1A 1B]
+  long DoNothing // [1A 1C]
+  long DoNothing // [1A 1D]
+  long DoNothing // [1A 1E]
+  long DoNothing // [1A 1F]
+  long DoNothing // [1A 20]
+  long DoNothing // [1A 21]
+  // ...
+  // You can keep adding them up to [1A FF].
+}
+
+// Original code references:
+// https://github.com/Herringway/ebsrc/blob/master/src/text/ccs/tree_1A.asm
+// https://earthbound-rom-explorerr.herokuapp.com/address/$c17b56
+
+// Overwrite the original 1A tree with our version.
+ROM[0xC17B56] = {
+  REP (0x31)
+  // Create stack frame, since we're going to be using some of the
+  // original code from this function, and it does a PLD before returning.
+  PHD
+  TDC
+  ADC_i(0xffee)
+  TCD
+  // The code we're calling does shenanigans to replace itself with the
+  // actual command we want, which will return with RTL, so JSL to it.
+  // Alternatively, the original code wrapper functions (Original1Axx)
+  // will remove this return address from the stack and jump to the
+  // original code path.
+  JSL(TableJumpUsing7E00BC)
+  // If returned A is 0, nothing happens.
+  // Otherwise it'll use the text parser's wacky call mechanism to RTS into A.
+  // No thank you, we already have our own wacky call mechanism.
+  // Again, note that this will be bypassed by the Original1Axx functions,
+  // and they will use whatever code they originally used to return.
+  LDA_i(0)
+  PLD
+  RTS // Original code was called with JSR
+}
+
+TableJumpUsing7E00BC: {
+  // The next byte of the CC sequence is already loaded in X.
+  // We preserve X on the stack, since the code we're jumping to
+  // may expect X = A = 2nd byte of CC sequence.
+  PHX
+  // Calculate X * 4 to index the jump table.
+  // Jump table is 4 byte pointers, because that's what Coil Snake writes naturally.
+  TXA
+  ASL
+  ASL
+  TAX
+  // Load pointer from table and store to 0x00BC.
+  // The vanilla code uses this for doing long jumps and calls, so we will too.
+  LDA_xl(CodeTable)
+  STA_a(D_Ptr_Trampoline_0)
+  INX
+  INX
+  LDA_xl(CodeTable)
+  STA_a(D_Ptr_Trampoline_2)
+  // Make sure to pull X and copy to A, since the original code
+  // may be expecting this.
+  PLX
+  TXA
+  // Execute jump to pointer.
+  // We don't need to return here so we can use JML.
+  // If we needed to return here, we could use JSL(R_Call_Ptr_Trampoline).
+  JML_i(D_Ptr_Trampoline)
+}
+
+// Code to jump back to the original branches in the tree.
+command ReturnToOriginalBranch(addr) {
+  // Remove return address of JSL(TableJumpUsing7E00BC)
+  // (3 bytes) from the stack.
+  // This lets us skip returning there, and instead
+  // execution will continue "normally", returning to
+  // DISPLAY_TEXT when the next RTS is hit.
+  PHB // Add 1
+  PLY // Remove 2
+  PLY // Remove 2
+  // Jump to the original branch in the tree.
+  JML(addr)
+}
+Original1A00: ReturnToOriginalBranch(0xc17b99)
+Original1A01: ReturnToOriginalBranch(0xc17b9f)
+Original1A04: ReturnToOriginalBranch(0xc17ba5)
+Original1A05: ReturnToOriginalBranch(0xc17bbf)
+Original1A06: ReturnToOriginalBranch(0xc17bc4)
+Original1A07: ReturnToOriginalBranch(0xc17bc9)
+Original1A08: ReturnToOriginalBranch(0xc17bdd)
+Original1A09: ReturnToOriginalBranch(0xc17bf4)
+Original1A0A: ReturnToOriginalBranch(0xc17c0b)
+Original1A0B: ReturnToOriginalBranch(0xc17c1f)
+
+// The way that EB handles CCScript arguments is quite convoluted.
+// 1. Commands return a value in A.
+// 2a. If 0, treat next byte as new command.
+// 2b. Otherwise, load next byte into X, then jump to script pointed to by A.
+// This is really inconvenient for us, since our code isn't even going to be
+// in a bank that the above jump can support.
+
+// Some useful variables: (thanks to Catador for the initial docs on this)
+// 7e96AA - Array of 10 text box structs, each 27 bytes long
+//        - The first 3 bytes are the text pointer, the rest doesn't matter
+// 7e97B8 - Index into that array of current text box
+
+// TODO:
+// So this probably means:
+// can't put the return 0 in the main hijack, some existing functions use it
+// our functions need to return 0 or they'll explode
+//   (the above two points should now be resolved)
+// make a wrapper that computes #$96AA + $97B8*27 (text pointer) at start?
+//   wrapper could also return 0 at end
+//   consistent place for text pointer would make "consume byte" funcs easier
+// consume byte funcs:
+//   byte, short, long
+//   byte or arg, short or arg,
+//   arg
+//   res
+
+DoNothing: {
+  RTL
+}

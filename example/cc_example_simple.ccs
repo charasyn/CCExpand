@@ -1,0 +1,33 @@
+import asm65816
+import ccexpand_asmlib
+
+// Examples of simple test functions.
+// CC_code_test_load loads a constant value of 1234567890 into the working memory.
+// CC_code_test_add loads 1234567890 + parameter (arg if 0) into the working memory.
+
+CC_code_test_load: M_EB_Function_Wrapper({
+    // Set working memory to 1234567890
+    LDA_i(0x02d2)
+    STA_d(0x0e)
+    LDA_i(0x4996)
+    STA_d(0x10)
+    JSL(R_Set_Working_Memory)
+})
+CC_code_test_add: M_EB_Function_Wrapper({
+    // Set working memory to 1234567890 + parameter (arg if 0)
+    LDY_i(0x0004)
+    JSL(R_Read_Parameter_Bytes)
+    LDA_a(D_cc_argv_0)
+    STA_d(0x06)
+    LDA_a(D_cc_argv_2)
+    STA_d(0x08)
+    JSL(R_Set_06_To_Argument_If_Zero)
+    CLC
+    LDA_i(0x02d2)
+    ADC_d(0x06)
+    STA_d(0x0e)
+    LDA_i(0x4996)
+    ADC_d(0x08)
+    STA_d(0x10)
+    JSL(R_Set_Working_Memory)
+})

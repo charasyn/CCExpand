@@ -1,0 +1,84 @@
+import asm65816
+import cc_example_simple_lib
+import cc_asmcall_lib
+import cc_text_speed_lib
+
+// Tracy's text pointer
+ROM[0xc66aa4] = { goto(test_menu) }
+
+test_menu: {
+    "@I'm not Tracy{pause(20)}, I'm the CCExpand test menu." next
+    "@What do you want to do?" newline
+    menu {
+        "example-simple": {goto(test_example_simple)}
+        "asmcall": {goto(test_asmcall)}
+        "text speed": {goto(test_text_speed)}
+    }
+    "@See ya!" eob
+}
+
+test_example_simple: {
+    "@Testing 1a 01..." next
+    "  pre [1a 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01] post" newline
+    rtoarg
+    "  Result: {number(0)}" next
+    window_clear
+    "@Testing test-load..." next
+    "  pre {test_load} post" newline
+    rtoarg
+    "  Result: {number(0)}" next
+    window_clear
+    "@Testing test-add..." next
+    "  pre {test_add(-1)} post" newline
+    rtoarg
+    "  Result: {number(0)}" next
+    window_clear
+    "@Combined test..." next
+    "  pre [1a 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01] post" newline
+    rtoarg
+    "  pre {test_add(0)} post" newline
+    rtoarg
+    "  Result: {number(0)}" next
+    eob
+}
+
+test_asmcall: {
+    "@Testing cc_asmcall..." next
+    "  pre {cc_asmcall(test_asmcall_asmcode, RET_RESULT_LONG)} post" newline
+    rtoarg
+    "  Result: {number(0)}" next
+    eob
+}
+
+// ASM routine to return 69420 (nice)
+test_asmcall_asmcode: {
+    LDA_i(0x0f2c)
+    STA_d(0x06)
+    LDA_i(0x0001)
+    STA_d(0x08)
+    RTL
+}
+
+test_text_speed: {
+    window_clear
+
+    // Save previous text speed into argument register
+    gettextspeed
+    rtoarg
+
+    settextspeed(2)
+    "@it's a beautiful day outside." next
+    "@birds are singing{pause(15)}, flowers are blooming{pause(5)}.{pause(5)}.{pause(5)}." next
+    "@on days like these{pause(15)}, kids like you... {pause(30)}"
+    window_clear
+    music_stop
+    settextspeed(9)
+    "@Should be burning in hell.{pause(60)}"
+    sound(32) pause(60)
+
+    // Restore text speed from argument register.
+    settextspeed(0)
+    music_resume
+    "@...sorry to spook you like that." next
+    eob
+}
