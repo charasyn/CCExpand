@@ -4,11 +4,11 @@ control codes into an EarthBound ROM hack.
 
 ## Usage
 1. Write assembly functions to implement your custom functionality
-  (see the documentation in `ccexpand_asmlib.ccs` and Examples)
+  (see the documentation in `ccexpand.ccs` and the examples)
 1. Add your assembly routine to `CodeTable` in `ccexpand.ccs`
 1. Use your new control code in a script!
-1. Recommended: Make a `_lib.ccs` file containing commands to make your
-  control code easier to use
+1. Recommended: Add commands that wrap your control code to make it
+  easier to use (see `cc_asmcall.ccs` for a good example)
 
 ## Examples
 Some examples of custom control codes can be seen in the `example/` directory:

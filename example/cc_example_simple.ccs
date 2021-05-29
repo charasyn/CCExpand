@@ -1,9 +1,12 @@
 import asm65816
-import ccexpand_asmlib
+import ccexpand
 
 // Examples of simple test functions.
 // CC_code_test_load loads a constant value of 1234567890 into the working memory.
 // CC_code_test_add loads 1234567890 + parameter (arg if 0) into the working memory.
+
+command test_load "[1a 02]"
+command test_add(x) "[1a 03 {long x}]"
 
 CC_code_test_load: M_EB_Function_Wrapper({
     // Set working memory to 1234567890

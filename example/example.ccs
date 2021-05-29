@@ -1,65 +1,70 @@
 import asm65816
-import cc_example_simple_lib
-import cc_asmcall_lib
-import cc_text_speed_lib
+import cc_example_simple
+import cc_asmcall
+import cc_text_speed
 
 // Tracy's text pointer
 ROM[0xc66aa4] = { goto(test_menu) }
 
-test_menu: {
+test_menu:
     "@I'm not Tracy{pause(20)}, I'm the CCExpand test menu." next
+test_menu_loop:
     "@What do you want to do?" newline
+    window_open(20)
     menu {
-        "example-simple": {goto(test_example_simple)}
-        "asmcall": {goto(test_asmcall)}
-        "text speed": {goto(test_text_speed)}
+        "simple":     {window_close(20) window_switch(1) goto(test_example_simple)}
+        "asmcall":    {window_close(20) window_switch(1) goto(test_asmcall)}
+        "text speed": {window_close(20) window_switch(1) goto(test_text_speed)}
     }
-    "@See ya!" eob
-}
+    window_close(20) window_switch(1)
+test_cancel:
+    "@See ya!" next
+    eob
 
-test_example_simple: {
-    "@Testing 1a 01..." next
+test_example_simple:
+    window_clear
+    "@Testing 1a 01 (Character select menu)..." next
     "  pre [1a 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01] post" newline
     rtoarg
     "  Result: {number(0)}" next
     window_clear
-    "@Testing test-load..." next
+    "@Testing test-load, which will load 1234567890..." next
     "  pre {test_load} post" newline
     rtoarg
     "  Result: {number(0)}" next
     window_clear
-    "@Testing test-add..." next
+    "@Testing test-add, which will add 1234567890 with -1..." next
     "  pre {test_add(-1)} post" newline
     rtoarg
     "  Result: {number(0)}" next
     window_clear
-    "@Combined test..." next
+    "@Combined test, printing 1234567890 + result of character select menu..." next
     "  pre [1a 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01] post" newline
     rtoarg
     "  pre {test_add(0)} post" newline
     rtoarg
     "  Result: {number(0)}" next
-    eob
-}
+    window_clear
+    goto(test_menu_loop)
 
-test_asmcall: {
-    "@Testing cc_asmcall..." next
+test_asmcall:
+    window_clear
+    "@Testing cc-asmcall. This should print 69420..." next
     "  pre {cc_asmcall(test_asmcall_asmcode, RET_RESULT_LONG)} post" newline
     rtoarg
     "  Result: {number(0)}" next
-    eob
-}
+    window_clear
+    goto(test_menu_loop)
 
 // ASM routine to return 69420 (nice)
-test_asmcall_asmcode: {
+test_asmcall_asmcode:
     LDA_i(0x0f2c)
     STA_d(0x06)
     LDA_i(0x0001)
     STA_d(0x08)
     RTL
-}
 
-test_text_speed: {
+test_text_speed:
     window_clear
 
     // Save previous text speed into argument register
@@ -69,7 +74,7 @@ test_text_speed: {
     settextspeed(2)
     "@it's a beautiful day outside." next
     "@birds are singing{pause(15)}, flowers are blooming{pause(5)}.{pause(5)}.{pause(5)}." next
-    "@on days like these{pause(15)}, kids like you... {pause(30)}"
+    "@on days like these{pause(15)}, kids like you{pause(5)}.{pause(5)}.{pause(5)}. {pause(30)}"
     window_clear
     music_stop
     settextspeed(9)
@@ -80,5 +85,6 @@ test_text_speed: {
     settextspeed(0)
     music_resume
     "@...sorry to spook you like that." next
-    eob
-}
+    "@Anyways{pause(5)}.{pause(5)}.{pause(5)}." next
+    window_clear
+    goto(test_menu_loop)

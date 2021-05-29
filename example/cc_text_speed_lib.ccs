@@ -1,2 +1,0 @@
-command gettextspeed "[1A 0D]"
-command settextspeed(x) "[1A 0E {byte x}]"

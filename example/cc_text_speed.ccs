@@ -1,5 +1,8 @@
 import asm65816
-import ccexpand_asmlib
+import ccexpand
+
+command gettextspeed "[1A 0D]"
+command settextspeed(x) "[1A 0E {byte x}]"
 
 // Get text speed in result.
 CC_code_gettextspeed: M_EB_Function_Wrapper({
