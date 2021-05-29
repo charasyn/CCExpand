@@ -3,12 +3,15 @@ This project aims to allow users to easily implement their own assembly-code
 control codes into an EarthBound ROM hack.
 
 ## Usage
+1. Download `ccexpand.ccs`
 1. Write assembly functions to implement your custom functionality
   (see the documentation in `ccexpand.ccs` and the examples)
 1. Add your assembly routine to `CodeTable` in `ccexpand.ccs`
-1. Use your new control code in a script!
 1. Recommended: Add commands that wrap your control code to make it
   easier to use (see `cc_asmcall.ccs` for a good example)
+1. Use your new control code in a script!
+1. Add all script files to a CoilSnake project and compile
+  (or compile manually with standalone CCScript)
 
 ## Examples
 Some examples of custom control codes can be seen in the `example/` directory:
