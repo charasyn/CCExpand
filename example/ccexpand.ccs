@@ -1,9 +1,16 @@
 import asm65816
 
-// Additional CCScript codes v0.2 - Single file version
+// CCExpand v0.3 - Additional CCScript codes
 // Initial version by jtolmar
 // Rework and additional support functions by cooprocks123e
 // With thanks to Phoenixbound, Catador and Herringway
+// Changelog:
+// 0.3 - Correct bug with R_Read_Parameter_Bytes
+//   The parameter space was not properly zero'ed out, leading to issues with
+//   M_Read_Bytes_or_Arg not returning the argument when the value was 0.
+//   Thanks to 0xCrafty for discovering and helping troubleshoot this bug!
+// 0.2 - Combine separate "library" and "implementation" files into single file
+// 0.1 - Initial version!
 
 // Many CCScript commands are "trees" that branch into more commands based on the
 // next byte. Of these, 1A and 1B have very few commands and lots of space to
@@ -349,7 +356,7 @@ R_Read_Parameter_Bytes: M_EB_Function_Wrapper_UserStack(-0x12, {
   TYA
   LSR // Get lower order bit in carry, and branch if 0
   LDA_i(0x0000)
-  BCC(13) // aligned
+  BCC(14) // aligned
   // Align Y to next word
   SEP(0x20)
   STA_y(D_cc_argv)

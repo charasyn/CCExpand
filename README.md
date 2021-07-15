@@ -25,6 +25,7 @@ Some examples of custom control codes can be seen in the `example/` directory:
 ## Thanks
 - jtolmar for providing a WIP which this was based on
 - phoenixbound and Catador for their support during development
+- 0xCrafty for bugtesting
 - All of the randomizer developers for inspiring me to get involved with PK Hacking
 - Everyone else on the PK Hack Discord for being awesome
 - The [EarthBound ROM Explorer](https://earthbound-rom-explorerr.herokuapp.com/)
